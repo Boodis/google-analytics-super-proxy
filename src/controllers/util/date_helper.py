@@ -51,6 +51,18 @@ def GetNATzinfo(tz='utc'):
     tzinfo = NorthAmericanTzinfo(-5, 'EST', 'EDT')
   elif tz == 'ast' or tz == 'adt' or tz == 'atlantic':
     tzinfo = NorthAmericanTzinfo(-4, 'AST', 'ADT')
+  elif tz == 'ast' or tz == 'adt' or tz == 'atlantic':
+    tzinfo = NorthAmericanTzinfo(-4, 'AST', 'ADT')
+  elif tz == 'sydney' or tz == 'melbourne' or tz == 'hobart':
+    tzinfo = AustralianTzinfo(10, 'AEST', 'AEDT')
+  elif tz == 'brisbane' or tz == 'aest':
+    tzinfo = AustralianTzinfo(10, 'AEST', 'AEST')
+  elif tz == 'adelaide':
+    tzinfo = AustralianTzinfo(9.5, 'ACST', 'ACST')
+  elif tz == 'darwin' or tz == 'acst':
+    tzinfo = AustralianTzinfo(9.5, 'ACST', 'ACST')
+  elif tz == 'perth' or tz == 'awst':
+    tzinfo = AustralianTzinfo(8, 'AWST', 'AWST')
   elif tz == 'utc':
     tzinfo = UtcTzinfo()
 
@@ -107,6 +119,45 @@ class NorthAmericanTzinfo(datetime.tzinfo):
     dst_start = self._FirstSunday(datetime.datetime(dt.year, 3, 8, 2))
     # 1 am on the first Sunday in November
     dst_end = self._FirstSunday(datetime.datetime(dt.year, 11, 1, 1))
+
+    if dst_start <= dt.replace(tzinfo=None) < dst_end:
+      return datetime.timedelta(hours=1)
+    else:
+      return datetime.timedelta(hours=0)
+
+  def tzname(self, dt):
+    if self.dst(dt) == datetime.timedelta(hours=0):
+      return self.dst_name
+    else:
+      return self.std_name
+
+class AustralianTzinfo(datetime.tzinfo):
+  """Implementation of Australian timezones."""
+
+  def __init__(self, hours, std_name, dst_name):
+    """Initialize value for the North American timezone.
+
+    Args:
+      hours: integer Offset of local time from UTC in hours. E.g. 10 is AEST.
+      std_name: string Name of the timezone for standard time. E.g. PST.
+      dst_name: string Name of the timezone for daylight savings time. E.g. PDT.
+    """
+    self.std_offset = datetime.timedelta(hours=hours)
+    self.std_name = std_name
+    self.dst_name = dst_name
+
+  def utcoffset(self, dt):
+    return self.std_offset + self.dst(dt)
+
+  def _FirstSunday(self, dt):
+    """First Sunday on or after dt."""
+    return dt + datetime.timedelta(days=(6-dt.weekday()))
+
+  def dst(self, dt):
+    # 2 am on the first Sunday in October
+    dst_start = self._FirstSunday(datetime.datetime(dt.year, 10, 1, 2))
+    # 2 am on the first Sunday in April
+    dst_end = self._FirstSunday(datetime.datetime(dt.year, 4, 1, 2))
 
     if dst_start <= dt.replace(tzinfo=None) < dst_end:
       return datetime.timedelta(hours=1)
